@@ -52,7 +52,7 @@ export class PolymerProject {
       this.config = new ProjectConfig(config);
     }
 
-    logger.debug(`build config loaded:`, this.config);
+    logger.info(`build config loaded:`, this.config);
 
     this.analyzer = new BuildAnalyzer(this.config);
   }

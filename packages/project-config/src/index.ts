@@ -202,6 +202,9 @@ export interface ProjectOptions {
    * "node": Use Node.js resolution to find modules.
    */
   moduleResolution?: ModuleResolutionStrategy;
+
+  /** URLs of files and/or folders that should be filtered out of stream. */
+  filter?: string[];
 }
 
 export class ProjectConfig {
@@ -210,6 +213,7 @@ export class ProjectConfig {
   readonly shell?: string;
   readonly fragments: string[];
   readonly sources: string[];
+  readonly filter?: string[];
   readonly extraDependencies: string[];
   readonly componentDir?: string;
   readonly npm?: boolean;
@@ -397,6 +401,10 @@ export class ProjectConfig {
 
     if (options.lint) {
       this.lint = options.lint;
+    }
+
+    if (options.filter) {
+      this.filter = options.filter;
     }
 
     /**

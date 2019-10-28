@@ -14,6 +14,9 @@
 
 import * as path from 'path';
 import * as logging from 'plylog';
+import * as gulpFilter from 'gulp-filter';
+// import * as minimatch from 'minimatch';
+
 import {Analyzer, FsUrlResolver, PackageRelativeUrl, ResolvedUrl, Severity, UrlLoader, Warning, WarningFilter, WarningPrinter} from 'polymer-analyzer';
 import {ProjectConfig} from 'polymer-project-config';
 import {PassThrough, Transform} from 'stream';
@@ -24,6 +27,7 @@ import {AsyncTransformStream, VinylReaderTransform} from './streams';
 
 import File = require('vinyl');
 
+logging.setVerbose();
 const logger = logging.getLogger('cli.build.analyzer');
 
 export interface DocumentDeps {
@@ -58,6 +62,13 @@ class ResolveTransform extends AsyncTransformStream<File, File> {
   protected async *
       _transformIter(files: AsyncIterable<File>): AsyncIterable<File> {
     for await (const file of files) {
+      // logger.info('ResolveTransform FILE', file.path);
+      // if (this._buildAnalyzer.config.filter && /\/firebase\//.test(file.path)) {
+      //   console.info('skipping resolve for ', file.path);
+      //   yield file;
+      //   return;
+      // }
+
       this._buildAnalyzer.resolveFile(file);
       yield file;
     }
@@ -91,6 +102,8 @@ class AnalyzeTransform extends AsyncTransformStream<File, File> {
   protected async *
       _transformIter(files: AsyncIterable<File>): AsyncIterable<File> {
     for await (const file of files) {
+      logger.info('AnalyzeTransform FILE', file.path);
+
       await this._buildAnalyzer.analyzeFile(file);
       yield file;
     }
@@ -177,6 +190,11 @@ export class BuildAnalyzer {
       nodir: true,
     });
 
+    if (this.config.filter) {
+      console.info('filtering source stream with : ', this.config.filter);
+      this._sourcesStream = this._sourcesStream.pipe(gulpFilter(this.config.filter));
+    }
+
     // _sourcesProcessingStream: Pipe the sources stream through...
     //   1. The resolver stream, to resolve each file loaded via the analyzer
     //   2. The analyzer stream, to analyze app fragments for dependencies
@@ -230,6 +248,7 @@ export class BuildAnalyzer {
    */
   resolveFile(file: File) {
     const filePath = file.path as LocalFsPath;
+
     this.addFile(file);
     // If our resolver is waiting for this file, resolve its deferred loader
     if (this.loader.hasDeferredFile(filePath)) {
@@ -402,11 +421,19 @@ export class BuildAnalyzer {
             `unexpected import type encountered: ${importFeature.type}`);
       }
     }
+    // logger.info('ResolveTransform FILE', file.path);
+    // if (this.config.filter && /\/firebase\//.test(url)) {
+    //   console.info('skipping dependencies for ', file.path);
+    //   yield file;
+    //   return;
+    // }
 
     const deps = {
-      scripts: [...scripts],
+      scripts: [...scripts].filter((url) => !/\/firebase\//.test(url)),
+      // scripts: [...scripts],
       styles: [...styles],
-      imports: [...imports],
+      imports: [...imports].filter((url) => !/\/firebase\//.test(url))
+      // imports: [...imports]
     };
     logger.debug(`dependencies analyzed for: ${url}`, deps);
     return deps;
@@ -456,6 +483,12 @@ export class BuildAnalyzer {
    * Each dependency is only pushed through once to avoid duplicates.
    */
   dependencyPathAnalyzed(filePath: LocalFsPath): void {
+    // if (/\/firebase\//.test(filePath)) {
+    //   logger.debug(
+    //       'ignoring dependency ...', {dep: filePath});
+    //   return;
+    // }
+
     if (this.getFile(filePath)) {
       logger.debug(
           'dependency has already been pushed, ignoring...', {dep: filePath});

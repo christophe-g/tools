@@ -14,6 +14,7 @@
 
 import * as babelCore from '@babel/core';
 import * as babylon from 'babylon';
+import * as logging from 'plylog';
 import {JsCompileTarget, ModuleResolutionStrategy} from 'polymer-project-config';
 import * as uuid from 'uuid/v1';
 
@@ -21,6 +22,8 @@ import {resolveBareSpecifiers} from './babel-plugin-bare-specifiers';
 import {dynamicImportAmd} from './babel-plugin-dynamic-import-amd';
 import {rewriteImportMeta} from './babel-plugin-import-meta';
 import * as externalJs from './external-js';
+
+const logger = logging.getLogger('cli.build.js-transform');
 
 // TODO(aomarks) Switch to babel-preset-env. But how do we get just syntax
 // plugins without turning on transformation, for the case where we are
@@ -186,6 +189,8 @@ export function jsTransform(js: string, options: JsTransformOptions): string {
   // make some minor formatting changes to the code. Skip Babel altogether
   // if we have no meaningful changes to make.
   let doBabelTransform = false;
+
+  logger.info(`transform js ${js}`, options );
 
   // Note that Babel plugins run in this order:
   // 1) plugins, first to last

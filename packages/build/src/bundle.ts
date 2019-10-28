@@ -22,6 +22,9 @@ import {FileMapUrlLoader} from './file-map-url-loader';
 import {pathFromUrl, urlFromPath, LocalFsPath} from './path-transformers';
 import {AsyncTransformStream} from './streams';
 
+import * as logging from 'plylog';
+const logger = logging.getLogger('cli.build.bundle');
+
 export {Options} from 'polymer-bundler';
 
 export class BuildBundler extends AsyncTransformStream<File, File> {
@@ -109,10 +112,12 @@ export class BuildBundler extends AsyncTransformStream<File, File> {
       const downstreamFile =
           this.files.get(this._buildAnalyzer.analyzer.resolveUrl(url)!);
       if (downstreamFile == null) {
-        throw new Error(
-            `Internal error: could not find downstreamFile at ${url}`);
+        logger.warn(`could not find downstreamFile at ${url}`);
+
+        // throw new Error(
+        //     `Internal error: could not find downstreamFile at ${url}`);
       }
-      if (downstreamFile.contents!.toString() !==
+      else if (downstreamFile.contents!.toString() !==
           originalFile.contents!.toString()) {
         filesChanged.push(url);
       }

@@ -76,6 +76,9 @@ export interface ProjectBuildOptions {
    */
   insertPrefetchLinks?: boolean;
 
+  /** URLs of files and/or folders that should be filtered out of stream. */
+  filter?: string[];
+
   /**
    * By default, fragments are unbundled. This is optimal for HTTP/2-compatible
    * servers and clients.
@@ -88,6 +91,7 @@ export interface ProjectBuildOptions {
 
     /** URLs of files and/or folders that should not be inlined. */
     excludes?: string[],
+
 
     /** Inline external CSS file contents into <style> tags. */
     inlineCss?: boolean,

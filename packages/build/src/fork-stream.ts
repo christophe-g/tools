@@ -13,12 +13,21 @@
  */
 
 import File = require('vinyl');
+import * as gulpFilter from 'gulp-filter';
 
 import {AsyncTransformStream} from './streams';
 
-export function forkStream(stream: NodeJS.ReadableStream):
+export function forkStream(stream: NodeJS.ReadableStream, filter?: string[] ):
+// export function forkStream(stream: NodeJS.ReadableStream):
     NodeJS.ReadableStream {
+
+  // note we should filter earlier on.
   const fork = new ForkedVinylStream();
+  filter = ['**', '!**/firebase/**', '!**/web_modules/**'];
+  if (filter) {
+    console.info('filtering stream with : ', filter);
+    stream = stream.pipe(gulpFilter(filter));
+  }
   stream.pipe(fork);
   return fork;
 }
@@ -34,6 +43,7 @@ export class ForkedVinylStream extends AsyncTransformStream<File, File> {
   protected async *
       _transformIter(files: AsyncIterable<File>): AsyncIterable<File> {
     for await (const file of files) {
+      console.info('fork stream file: ', file.path);
       yield file.clone({deep: true, contents: true});
     }
   }

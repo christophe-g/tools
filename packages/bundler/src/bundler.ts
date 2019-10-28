@@ -208,9 +208,11 @@ export class Bundler {
     // Remove excluded files from bundles.
     for (const bundle of bundles) {
       for (const exclude of this.excludes) {
+        console.info('Exclude: ', exclude);
         bundle.files.delete(exclude);
         const excludeAsFolder = exclude.endsWith('/') ? exclude : exclude + '/';
         for (const file of bundle.files) {
+          console.info('Exclude File: ', file);
           if (file.startsWith(excludeAsFolder)) {
             bundle.files.delete(file);
           }

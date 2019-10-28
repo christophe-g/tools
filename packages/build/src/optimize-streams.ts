@@ -46,6 +46,7 @@ export interface OptimizeOptions {
   js?: JsOptimizeOptions;
   entrypointPath?: string;
   rootDir?: string;
+  excludes?: boolean | string[];
 }
 
 export type JsCompileOptions = boolean|JsCompileTarget|{
@@ -84,11 +85,19 @@ export class GenericOptimizeTransform extends Transform {
     // "webcomponentsjs" files aren't compiled down to ES5, because they contain
     // an important ES6 shim to make custom elements possible. Remove/refactor
     // when we have a better plan for excluding some files from optimization.
+    logger.info('tranforming for  for ...' + file.path );
+
     if (!file.path || file.path.indexOf('webcomponentsjs/') >= 0 ||
         file.path.indexOf('webcomponentsjs\\') >= 0) {
       callback(undefined, file);
       return;
     }
+
+    // if (this.optimizerOptions.presets && this.optimizerOptions.presets[0].ignore === true) {
+    //     logger.warn('skip minify for ...' + file.path );
+    //     callback(null, file);
+    //     return;
+    // }
 
     if (file.contents) {
       try {
@@ -269,7 +278,15 @@ export function getOptimizeStreams(options?: OptimizeOptions):
   options = options || {};
   const streams = [];
 
+  logger.info('optimize stream with  ...', options );
+
   streams.push(gulpif(matchesExt('.js'), new JsTransform(options)));
+  // if (options.js && options.js.minify) {
+  //   logger.info('minify js');
+  //   streams.push(gulpif(matchesExtAndNotExcluded('.js', options.js.minify), new JsTransform(options)));
+  // } else {
+  //   streams.push(gulpif(matchesExt('.js'), new JsTransform(options)));
+  // }
   streams.push(gulpif(matchesExt('.html'), new HtmlTransform(options)));
 
   if (options.css && options.css.minify) {
@@ -283,6 +300,7 @@ export function getOptimizeStreams(options?: OptimizeOptions):
         new InlineCSSOptimizeTransform({stripWhitespace: true})));
   }
 
+  // logger.info('steams: ', streams);
   return streams;
 }
 

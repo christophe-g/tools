@@ -41,15 +41,20 @@ export async function build(
   // If no name is provided, write directly to the build/ directory.
   // If a build name is provided, write to that subdirectory.
   const buildDirectory = path.join(mainBuildDirectoryName, buildName);
-  logger.debug(`"${buildDirectory}": Building with options:`, options);
+  logger.debug(`"${buildDirectory}": Start Building `);
 
   // Fork the two streams to guarentee we are working with clean copies of each
   // file and not sharing object references with other builds.
-  const sourcesStream = forkStream(polymerProject.sources());
-  const depsStream = forkStream(polymerProject.dependencies());
+  // const sourcesStream = forkStream(polymerProject.sources());
+  const sourcesStream = forkStream(polymerProject.sources(), polymerProject.filter);
+  // const depsStream = forkStream(polymerProject.dependencies());
+  const depsStream = forkStream(polymerProject.dependencies(), polymerProject.filter);
 
+  // logger.debug(`"${buildDirectory}": Source `, sourcesStream);
+  // logger.debug(`"${buildDirectory}": Deps `, depsStream);
   const bundled = !!(options.bundle);
 
+  logger.debug(`"${buildDirectory}": First Stream `);
   let buildStream: NodeJS.ReadableStream =
       mergeStream(sourcesStream, depsStream);
 
@@ -59,6 +64,7 @@ export async function build(
           (typeof options.js.compile === 'object' &&
            options.js.compile.target === 'es5');
   if (compiledToES5) {
+    logger.debug(`"${buildDirectory}": Compile to ES5 `);
     buildStream =
         buildStream.pipe(polymerProject.addCustomElementsEs5Adapter());
   }
@@ -98,11 +104,13 @@ export async function build(
     if (typeof options.bundle === 'object') {
       Object.assign(bundlerOptions, options.bundle);
     }
+    logger.debug(`"${buildDirectory}": buiding bundle stream ... `);
     buildStream = buildStream.pipe(polymerProject.bundler(bundlerOptions));
   }
 
   const htmlSplitter = new HtmlSplitter();
 
+  logger.debug(`"${buildDirectory}": html splitter stream ... `);
   buildStream = pipeStreams([
     buildStream,
     htmlSplitter.split(),
@@ -116,11 +124,13 @@ export async function build(
       },
       entrypointPath: polymerProject.config.entrypoint,
       rootDir: polymerProject.config.root,
+      excludes: options.bundle && (typeof options.bundle === 'object')  && options.bundle.excludes
     }),
 
     htmlSplitter.rejoin()
   ]);
 
+  logger.debug(`"${buildDirectory}": insertePrefetch ... `);
   if (options.insertPrefetchLinks) {
     buildStream = buildStream.pipe(polymerProject.addPrefetchLinks());
   }
@@ -129,6 +139,7 @@ export async function build(
     logger.info(`(${buildName}) Building...`);
   });
 
+  logger.debug(`"${buildDirectory}": Base path ... `);
   if (options.basePath) {
     let basePath = options.basePath === true ? buildName : options.basePath;
     if (!basePath.startsWith('/')) {

@@ -10,6 +10,12 @@
   "scripts": {
     "bootstrap": "lerna bootstrap --ci",
     "build": "lerna run build --stream",
+    "build:build": "lerna run build --scope *build --stream",
+    "build:bundle": "lerna run build --scope *bundle --stream",
+    "build:cli": "lerna run build --scope *cli --stream",
+    "build:config": "lerna run build --scope *config --stream",
+    "build:analyzer": "lerna run build --scope *analyzer --stream",
+    "build:me": "npm run build:build && npm run build:bundle && npm run build:analyzer",
     "format": "lerna run format --stream",
     "lint": "lerna run lint --stream",
     "nuke": "rm -rf package-lock.json node_modules && npm install && lerna exec \"rm -f package-lock.json npm-shrinkwrap.json\" && lerna clean --yes && lerna bootstrap && lerna exec --stream -- \"test -f package-lock.json || npm install --package-lock-only\"",
@@ -40,6 +46,7 @@
   },
   "dependencies": {
     "@types/chai": "^4.1.3",
+    "@types/gulp-filter": "^3.0.33",
     "@types/mocha": "^5.2.1",
     "chai": "^4.1.2",
     "clang-format": "^1.2.4",
